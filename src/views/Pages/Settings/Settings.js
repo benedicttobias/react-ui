@@ -1,19 +1,31 @@
 import React, { Component } from 'react';
 import { Button, Card, CardBody, Col, Container, Form, Input, InputGroup, InputGroupAddon, InputGroupText, Row } from 'reactstrap';
+import Cookies from 'universal-cookie';
+
+const cookies = new Cookies();
+
 
 class Settings extends Component {
   constructor(props){
     super(props);
 
     this.TestConnection = this.TestConnection.bind(this);
+    this.SaveConnection = this.SaveConnection.bind(this)
   }
 
+  // IIS 10, you need to install CORS module: 
+  // And add these to webConfig unser system.webServer:
+  //   <cors enabled="true">
+  //     <add origin="localhost:3000">
+  //       <allowHeaders allowAllRequestedHeaders="true" />
+  //     </add>
+  //   </cors>
   TestConnection(props) {
     fetch('http://jvzvnq2.calero.com/registry/v1/session', {
       method: 'POST',
       headers: {
         'Accept': '*/*',
-        'Content-Type': 'application/json',
+        'content-type': 'application/json',
       },
       body: JSON.stringify({
         username: 'lbj@calero.com',
@@ -21,7 +33,36 @@ class Settings extends Component {
       })
     })
     .then(response => response.json())
-    .then(jsondata => console.log(jsondata))
+    .then(jsondata => {
+      if (jsondata.item.token != null){
+        fetch('http://jvzvnq2.calero.com/registry/v1/session', {
+          method: 'DELETE',
+          headers: {
+            'content-type': 'application/json',
+          }
+        })
+      }
+    })
+  }
+
+  SaveConnection(props) {
+    fetch('http://jvzvnq2.calero.com/registry/v1/session', {
+        method: 'POST',
+        headers: {
+          'Accept': '*/*',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: 'lbj@calero.com',
+          password: 'calerols',
+        })
+      })
+      .then(response => response.json())
+      .then(jsondata => {
+        cookies.set('loginToken', jsondata.item.token, { path: '/' });
+
+        console.log('cookie set: ' + cookies.get('loginToken'));
+      })
   }
 
   render() {
@@ -57,7 +98,7 @@ class Settings extends Component {
                       <Input type="password" placeholder="Password" autoComplete="new-password" />
                     </InputGroup>
                     <Button onClick={this.TestConnection} block>Test Connection</Button>
-                    <Button color="success" block>Save</Button>
+                    <Button onClick={this.SaveConnection} color="success" block>Save</Button>
                   </Form>
                 </CardBody>
               </Card>
